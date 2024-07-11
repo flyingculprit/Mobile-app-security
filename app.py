@@ -2,6 +2,7 @@ import os
 import shutil
 from flask import Flask, request, render_template
 import subprocess
+import re
 
 app = Flask(__name__)
 
@@ -32,14 +33,35 @@ def analyze_apk(decompiled_dir):
                     content = f.read()
                     if "API_KEY" in content or "SECRET_KEY" in content:
                         issues.append(f"Hardcoded key found in {os.path.join(root, file)}")
+                    # Check for obfuscated code in .smali files
+                    if file.endswith(".smali"):
+                        if "goto" in content or "nop" in content:
+                            issues.append(f"Potential obfuscated code found in {os.path.join(root, file)}")
+                    # Check for suspicious network activity
+                    if "http://" in content or "https://" in content or re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', content):
+                        issues.append(f"Suspicious network activity found in {os.path.join(root, file)}")
 
-    # Check for insecure permissions in AndroidManifest.xml
+    # Check for dangerous permissions in AndroidManifest.xml
     manifest_path = os.path.join(decompiled_dir, "AndroidManifest.xml")
     if os.path.exists(manifest_path):
         with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
-            if "android.permission.INTERNET" in content and "android.permission.ACCESS_FINE_LOCATION" in content:
-                issues.append("Insecure permissions found in AndroidManifest.xml")
+            dangerous_permissions = [
+                "android.permission.READ_SMS",
+                "android.permission.SEND_SMS",
+                "android.permission.RECEIVE_SMS",
+                "android.permission.READ_CONTACTS",
+                "android.permission.WRITE_CONTACTS",
+                "android.permission.RECORD_AUDIO",
+                "android.permission.CAMERA",
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.READ_PHONE_STATE",
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "android.permission.INTERNET"
+            ]
+            for permission in dangerous_permissions:
+                if permission in content:
+                    issues.append(f"Dangerous permission {permission} found in AndroidManifest.xml")
 
     if not issues:
         issues.append("No issues found.")
