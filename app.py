@@ -35,7 +35,7 @@ def analyze_apk(decompiled_dir):
                         issues.append(f"Hardcoded key found in {os.path.join(root, file)}")
                     # Check for obfuscated code in .smali files
                     if file.endswith(".smali"):
-                        if "goto" in content or "nop" in content:
+                        if "goto" in content or "nop" in content or re.search(r'\bL[a-zA-Z0-9]{3,}\b', content):
                             issues.append(f"Potential obfuscated code found in {os.path.join(root, file)}")
                     # Check for suspicious network activity
                     if "http://" in content or "https://" in content or re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', content):
