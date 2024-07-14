@@ -18,13 +18,13 @@ def decompile_apk(apk_path, output_dir):
     # Remove the existing directory if it exists
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
-    cmd = f"apktool d -f '{apk_path}' -o '{output_dir}'"
+    cmd = f"apktool d -f \"{apk_path}\" -o \"{output_dir}\""
     print(f"Running command: {cmd}")  # Debug print statement
     subprocess.run(cmd, shell=True, check=True)
 
 def analyze_apk(decompiled_dir):
     issues = []
-    
+
     # Check for hardcoded API keys or secrets
     for root, _, files in os.walk(decompiled_dir):
         for file in files:
