@@ -1,6 +1,6 @@
 import os
 import shutil
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template
 import subprocess
 import re
 
@@ -13,10 +13,6 @@ app.config['DECOMPILED_FOLDER'] = 'decompiled'
 # Ensure the directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DECOMPILED_FOLDER'], exist_ok=True)
-
-# Global variable to keep track of the last decompiled directory
-global last_decompiled_dir
-last_decompiled_dir = None
 
 def decompile_apk(apk_path, output_dir):
     # Remove the existing directory if it exists
@@ -74,7 +70,6 @@ def analyze_apk(decompiled_dir):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    global last_decompiled_dir
     if request.method == 'POST':
         file = request.files['file']
         if file and file.filename.endswith('.apk'):
@@ -85,7 +80,6 @@ def upload_file():
             try:
                 output_dir = os.path.join(app.config['DECOMPILED_FOLDER'], os.path.splitext(filename)[0])
                 decompile_apk(apk_path, output_dir)
-                last_decompiled_dir = output_dir
                 issues = analyze_apk(output_dir)
                 return render_template('results.html', issues=issues)
             except subprocess.CalledProcessError as e:
@@ -93,20 +87,6 @@ def upload_file():
                 return f"Error during decompilation: {e}", 500
     return render_template('upload.html')
 
-@app.route('/download_results')
-def download_results():
-    if last_decompiled_dir is None:
-        return "No results available for download.", 400
-
-    # Path to the file where results are stored
-    results_path = os.path.join(app.config['DECOMPILED_FOLDER'], 'results.txt')
-
-    # Create and write the results to the file
-    with open(results_path, 'w') as f:
-        for issue in analyze_apk(last_decompiled_dir):
-            f.write(issue + '\n')
-
-    return send_file(results_path, as_attachment=True, download_name='analysis_results.txt')
-
 if __name__ == '__main__':
     app.run(debug=True)
+
