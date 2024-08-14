@@ -1,8 +1,8 @@
 import os
 import shutil
+from flask import Flask, request, render_template, send_file
 import subprocess
 import re
-from flask import Flask, request, render_template, send_file
 
 app = Flask(__name__)
 
@@ -25,21 +25,6 @@ def decompile_apk(apk_path, output_dir):
     cmd = f"apktool d -f '{apk_path}' -o '{output_dir}'"
     print(f"Running command: {cmd}")  # Debug print statement
     subprocess.run(cmd, shell=True, check=True)
-
-def run_frida_script(package_name, script_path):
-    cmd = f"frida -U -p $(adb shell ps | grep {package_name} | awk '{{print $2}}') -l {script_path}"
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    return result.stdout
-
-def get_package_name(decompiled_dir):
-    manifest_path = os.path.join(decompiled_dir, "AndroidManifest.xml")
-    if os.path.exists(manifest_path):
-        with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-            match = re.search(r'package="([^"]+)"', content)
-            if match:
-                return match.group(1)
-    return None
 
 def analyze_apk(decompiled_dir):
     issues = []
@@ -82,14 +67,6 @@ def analyze_apk(decompiled_dir):
                 if permission in content:
                     issues.append(f"Dangerous permission {permission} found in AndroidManifest.xml")
 
-    # Analyze APK with Frida
-    package_name = get_package_name(decompiled_dir)
-    if package_name:
-        frida_script_path = 'frida_scripts/frida_script.js'
-        frida_output = run_frida_script(package_name, frida_script_path)
-        if frida_output:
-            issues.append(f"Frida analysis results:\n{frida_output}")
-    
     if not issues:
         issues.append("No issues found.")
     
