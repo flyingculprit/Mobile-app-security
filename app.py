@@ -1,9 +1,11 @@
 import os
 import shutil
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, redirect, url_for
 import subprocess
 import re
 from zipfile import ZipFile
+from io import BytesIO
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -30,8 +32,10 @@ def extract_icon(apk_path):
         icon_files = [f for f in apk.namelist() if f.endswith('.png') and 'mipmap' in f or 'drawable' in f]
         if icon_files:
             largest_icon = max(icon_files, key=lambda x: apk.getinfo(x).file_size)
-            icon_path = os.path.join(app.config['ICON_FOLDER'], os.path.basename(largest_icon))
-            apk.extract(largest_icon, app.config['ICON_FOLDER'])
+            with apk.open(largest_icon) as icon_file:
+                icon_path = os.path.join(app.config['ICON_FOLDER'], os.path.basename(largest_icon))
+                with open(icon_path, 'wb') as f:
+                    shutil.copyfileobj(icon_file, f)
             return icon_path
     return None
 
