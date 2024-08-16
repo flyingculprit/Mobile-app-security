@@ -4,7 +4,6 @@ from flask import Flask, request, render_template, send_file
 import subprocess
 import re
 from zipfile import ZipFile
-from PIL import Image
 
 app = Flask(__name__)
 
@@ -28,13 +27,12 @@ def decompile_apk(apk_path, output_dir):
 
 def extract_icon(apk_path):
     with ZipFile(apk_path, 'r') as apk:
-        icon_candidates = [file for file in apk.namelist() if file.endswith('.png') and ('res/mipmap' in file or 'res/drawable' in file)]
-        if icon_candidates:
-            # Choose the highest resolution icon (usually largest in size)
-            icon_file = max(icon_candidates, key=lambda x: apk.getinfo(x).file_size)
-            apk.extract(icon_file, app.config['ICON_FOLDER'])
-            icon_path = os.path.join(app.config['ICON_FOLDER'], icon_file)
-            return icon_path.replace('\\', '/')  # Handle Windows paths
+        icon_files = [f for f in apk.namelist() if f.endswith('.png') and 'mipmap' in f or 'drawable' in f]
+        if icon_files:
+            largest_icon = max(icon_files, key=lambda x: apk.getinfo(x).file_size)
+            icon_path = os.path.join(app.config['ICON_FOLDER'], os.path.basename(largest_icon))
+            apk.extract(largest_icon, app.config['ICON_FOLDER'])
+            return icon_path
     return None
 
 def analyze_apk(decompiled_dir):
