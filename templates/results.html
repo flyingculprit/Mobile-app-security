@@ -2,27 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Results</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ae77fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .icon {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        a {
+            color: #ae77fa;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Analysis Results</h1>
-        {% if icon %}
-            <div class="icon-container">
-                <img src="{{ url_for('static', filename=icon.split('static/')[1]) }}" alt="APK Icon" class="apk-icon">
-                <p><strong>{{ apk_name }}</strong></p>
-            </div>
+        {% if icon_path %}
+        <img src="{{ url_for('static', filename='icon.png') }}" alt="APK Icon" class="icon">
         {% endif %}
-        <ul class="issues-list">
+        <ul>
         {% for issue in issues %}
-            <li class="issue">{{ issue }}</li>
+            <li>{{ issue }}</li>
         {% endfor %}
         </ul>
-        <a href="/" class="button">Upload Another APK</a>
+        <a href="/">Upload another APK</a>
         <br>
-        <a href="/download_results" class="button">Download Results</a>
+        <a href="/download_results">Download Results</a>
     </div>
 </body>
 </html>

@@ -1,46 +1,53 @@
 import os
 import shutil
-from flask import Flask, request, render_template, send_file, redirect, url_for
+from flask import Flask, request, render_template, send_file
 import subprocess
 import re
-from zipfile import ZipFile
-from io import BytesIO
-from PIL import Image
 
 app = Flask(__name__)
 
+# Define the upload and decompile directories
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['DECOMPILED_FOLDER'] = 'decompiled'
-app.config['ICON_FOLDER'] = 'static/icons'
+app.config['ICON_FOLDER'] = 'icons'
 
+# Ensure the directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DECOMPILED_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ICON_FOLDER'], exist_ok=True)
 
-global last_decompiled_dir, apk_icon_path
+# Global variable to keep track of the last decompiled directory and icon
+global last_decompiled_dir, last_icon_path
 last_decompiled_dir = None
-apk_icon_path = None
+last_icon_path = None
 
 def decompile_apk(apk_path, output_dir):
+    # Remove the existing directory if it exists
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     cmd = f"apktool d -f '{apk_path}' -o '{output_dir}'"
+    print(f"Running command: {cmd}")  # Debug print statement
     subprocess.run(cmd, shell=True, check=True)
 
-def extract_icon(apk_path):
-    with ZipFile(apk_path, 'r') as apk:
-        icon_files = [f for f in apk.namelist() if f.endswith('.png') and 'mipmap' in f or 'drawable' in f]
-        if icon_files:
-            largest_icon = max(icon_files, key=lambda x: apk.getinfo(x).file_size)
-            with apk.open(largest_icon) as icon_file:
-                icon_path = os.path.join(app.config['ICON_FOLDER'], os.path.basename(largest_icon))
-                with open(icon_path, 'wb') as f:
-                    shutil.copyfileobj(icon_file, f)
-            return icon_path
-    return None
-
+def extract_apk_icon(apk_path, icon_path):
+    # Use aapt to extract the APK icon
+    cmd = f"aapt dump badging '{apk_path}' | grep application-icon"
+    output = subprocess.check_output(cmd, shell=True).decode()
+    icon_info = output.split("'")[1]  # Extract the icon path
+    icon_cmd = f"aapt dump xmltree '{apk_path}' AndroidManifest.xml | grep -A 1 'application' | grep 'icon' | sed 's/.*android:icon=\"//;s/\".*//'"
+    icon_name = subprocess.check_output(icon_cmd, shell=True).decode().strip()
+    if icon_name:
+        icon_cmd = f"aapt dump --values resources '{apk_path}' | grep '{icon_name}' | sed 's/.*android:icon=\"//;s/\".*//'"
+        icon_resource = subprocess.check_output(icon_cmd, shell=True).decode().strip()
+        icon_cmd = f"aapt package -f -M AndroidManifest.xml -S res -I $(aapt2 dump badging '{apk_path}' | grep -oP 'package: name=\'\K[^\']+')"
+        subprocess.run(icon_cmd, shell=True)
+        icon_cmd = f"aapt dump xmltree '{apk_path}' AndroidManifest.xml | grep -A 1 'application' | grep 'icon' | sed 's/.*android:icon=\"//;s/\".*//'"
+        subprocess.run(f"aapt dump --values resources '{apk_path}' | grep '{icon_resource}' | sed 's/.*android:icon=\"//;s/\".*//'", shell=True, stdout=open(icon_path, 'wb'))
+    
 def analyze_apk(decompiled_dir):
     issues = []
+    
+    # Check for hardcoded API keys or secrets
     for root, _, files in os.walk(decompiled_dir):
         for file in files:
             if file.endswith(".xml") or file.endswith(".smali") or file.endswith(".java"):
@@ -48,12 +55,15 @@ def analyze_apk(decompiled_dir):
                     content = f.read()
                     if "API_KEY" in content or "SECRET_KEY" in content:
                         issues.append(f"Hardcoded key found in {os.path.join(root, file)}")
+                    # Check for obfuscated code in .smali files
                     if file.endswith(".smali"):
                         if "goto" in content or "nop" in content or re.search(r'\bL[a-zA-Z0-9]{3,}\b', content):
                             issues.append(f"Potential obfuscated code found in {os.path.join(root, file)}")
+                    # Check for suspicious network activity
                     if "http://" in content or "https://" in content or re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', content):
                         issues.append(f"Suspicious network activity found in {os.path.join(root, file)}")
 
+    # Check for dangerous permissions in AndroidManifest.xml
     manifest_path = os.path.join(decompiled_dir, "AndroidManifest.xml")
     if os.path.exists(manifest_path):
         with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -82,23 +92,28 @@ def analyze_apk(decompiled_dir):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    global last_decompiled_dir, apk_icon_path
+    global last_decompiled_dir, last_icon_path
     if request.method == 'POST':
         file = request.files['file']
         if file and file.filename.endswith('.apk'):
             filename = file.filename
             apk_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(apk_path)
+            print(f"File saved to {apk_path}")  # Debug print statement
             try:
                 output_dir = os.path.join(app.config['DECOMPILED_FOLDER'], os.path.splitext(filename)[0])
                 decompile_apk(apk_path, output_dir)
                 last_decompiled_dir = output_dir
-
-                apk_icon_path = extract_icon(apk_path)
-
+                
+                # Extract APK icon
+                icon_path = os.path.join(app.config['ICON_FOLDER'], 'icon.png')
+                extract_apk_icon(apk_path, icon_path)
+                last_icon_path = icon_path
+                
                 issues = analyze_apk(output_dir)
-                return render_template('results.html', issues=issues, icon=apk_icon_path, apk_name=filename)
+                return render_template('results.html', issues=issues, icon_path=icon_path)
             except subprocess.CalledProcessError as e:
+                print(f"Error during decompilation: {e}")
                 return f"Error during decompilation: {e}", 500
     return render_template('upload.html')
 
@@ -107,8 +122,10 @@ def download_results():
     if last_decompiled_dir is None:
         return "No results available for download.", 400
 
+    # Path to the file where results are stored
     results_path = os.path.join(app.config['DECOMPILED_FOLDER'], 'results.txt')
 
+    # Create and write the results to the file
     with open(results_path, 'w') as f:
         for issue in analyze_apk(last_decompiled_dir):
             f.write(issue + '\n')
