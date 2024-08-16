@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload APK</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e0f7fa;
+            color: #333;
+        }
+        h1 {
+            background-color: #00796b;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #00796b;
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #00796b;
+            border-radius: 4px;
+            background-color: #b2dfdb;
+            color: #00796b;
+        }
+        input[type="submit"] {
+            background-color: #00796b;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background-color: #004d40;
+        }
+        .status {
+            font-size: 16px;
+            color: #00796b;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload APK for Analysis</h1>
+    <div class="container">
+        <form action="/" method="post" enctype="multipart/form-data">
+            <label for="file">Choose APK file:</label>
+            <input type="file" id="file" name="file" accept=".apk" required>
+            <input type="submit" value="Upload">
+        </form>
+        <!-- Display status messages -->
+        {% if status %}
+            <p class="status">{{ status }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
