@@ -1,6 +1,6 @@
 import os
 import shutil
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, send_from_directory
 import subprocess
 import re
 
@@ -9,14 +9,14 @@ app = Flask(__name__)
 # Define the upload and decompile directories
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['DECOMPILED_FOLDER'] = 'decompiled'
-app.config['ICON_FOLDER'] = 'icons'
+app.config['ICON_FOLDER'] = 'static/icons'
 
 # Ensure the directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DECOMPILED_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ICON_FOLDER'], exist_ok=True)
 
-# Global variable to keep track of the last decompiled directory and icon
+# Global variables to keep track of the last decompiled directory and icon
 global last_decompiled_dir, last_icon_path
 last_decompiled_dir = None
 last_icon_path = None
@@ -33,17 +33,17 @@ def extract_apk_icon(apk_path, icon_path):
     # Use aapt to extract the APK icon
     cmd = f"aapt dump badging '{apk_path}' | grep application-icon"
     output = subprocess.check_output(cmd, shell=True).decode()
-    icon_info = output.split("'")[1]  # Extract the icon path
-    icon_cmd = f"aapt dump xmltree '{apk_path}' AndroidManifest.xml | grep -A 1 'application' | grep 'icon' | sed 's/.*android:icon=\"//;s/\".*//'"
-    icon_name = subprocess.check_output(icon_cmd, shell=True).decode().strip()
-    if icon_name:
-        icon_cmd = f"aapt dump --values resources '{apk_path}' | grep '{icon_name}' | sed 's/.*android:icon=\"//;s/\".*//'"
-        icon_resource = subprocess.check_output(icon_cmd, shell=True).decode().strip()
-        icon_cmd = f"aapt package -f -M AndroidManifest.xml -S res -I $(aapt2 dump badging '{apk_path}' | grep -oP 'package: name=\'\K[^\']+')"
-        subprocess.run(icon_cmd, shell=True)
-        icon_cmd = f"aapt dump xmltree '{apk_path}' AndroidManifest.xml | grep -A 1 'application' | grep 'icon' | sed 's/.*android:icon=\"//;s/\".*//'"
-        subprocess.run(f"aapt dump --values resources '{apk_path}' | grep '{icon_resource}' | sed 's/.*android:icon=\"//;s/\".*//'", shell=True, stdout=open(icon_path, 'wb'))
+    icon_info = re.search(r"\'(.*?)\'", output).group(1)  # Extract icon path
+    print(f"Icon info: {icon_info}")  # Debug print statement
     
+    if icon_info:
+        cmd = f"aapt dump xmltree '{apk_path}' AndroidManifest.xml | grep -A 1 'application' | grep 'icon' | sed 's/.*android:icon=\"//;s/\".*//'"
+        icon_name = subprocess.check_output(cmd, shell=True).decode().strip()
+        if icon_name:
+            icon_cmd = f"aapt dump --values resources '{apk_path}' | grep '{icon_name}' | sed 's/.*android:icon=\"//;s/\".*//'"
+            icon_resource = subprocess.check_output(icon_cmd, shell=True).decode().strip()
+            subprocess.run(f"aapt dump --values resources '{apk_path}' | grep '{icon_resource}' | sed 's/.*android:icon=\"//;s/\".*//'", shell=True, stdout=open(icon_path, 'wb'))
+
 def analyze_apk(decompiled_dir):
     issues = []
     
@@ -111,7 +111,7 @@ def upload_file():
                 last_icon_path = icon_path
                 
                 issues = analyze_apk(output_dir)
-                return render_template('results.html', issues=issues, icon_path=icon_path)
+                return render_template('results.html', issues=issues, icon_url=url_for('static', filename='icons/icon.png'))
             except subprocess.CalledProcessError as e:
                 print(f"Error during decompilation: {e}")
                 return f"Error during decompilation: {e}", 500

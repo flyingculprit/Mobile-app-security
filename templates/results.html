@@ -38,6 +38,7 @@
             height: 100px;
             margin-bottom: 20px;
             border-radius: 8px;
+            background-color: #ddd;
         }
         a {
             color: #ae77fa;
@@ -52,8 +53,8 @@
 <body>
     <div class="container">
         <h1>Analysis Results</h1>
-        {% if icon_path %}
-        <img src="{{ url_for('static', filename='icon.png') }}" alt="APK Icon" class="icon">
+        {% if icon_url %}
+        <img src="{{ icon_url }}" alt="APK Icon" class="icon">
         {% endif %}
         <ul>
         {% for issue in issues %}
