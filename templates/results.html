@@ -3,16 +3,25 @@
 <head>
     <meta charset="utf-8">
     <title>Analysis Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Analysis Results</h1>
-    <ul>
-    {% for issue in issues %}
-        <li>{{ issue }}</li>
-    {% endfor %}
-    </ul>
-    <a href="/">Upload another APK</a>
-    <br>
-    <a href="/download_results">Download Results</a>
+    <div class="container">
+        <h1>Analysis Results</h1>
+        {% if icon %}
+            <div class="icon-container">
+                <img src="{{ url_for('static', filename=icon) }}" alt="APK Icon" class="apk-icon">
+                <p><strong>{{ apk_name }}</strong></p>
+            </div>
+        {% endif %}
+        <ul>
+        {% for issue in issues %}
+            <li class="issue">{{ issue }}</li>
+        {% endfor %}
+        </ul>
+        <a href="/" class="button">Upload another APK</a>
+        <br>
+        <a href="/download_results" class="button">Download Results</a>
+    </div>
 </body>
 </html>

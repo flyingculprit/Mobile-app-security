@@ -1,27 +1,22 @@
 import os
 import shutil
-from flask import Flask, request, render_template, send_file, redirect, url_for
 import subprocess
 import re
-from zipfile import ZipFile
-from PIL import Image
+from flask import Flask, request, render_template, send_file
 
 app = Flask(__name__)
 
 # Define the upload and decompile directories
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['DECOMPILED_FOLDER'] = 'decompiled'
-app.config['ICON_FOLDER'] = 'static/icons'
 
 # Ensure the directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DECOMPILED_FOLDER'], exist_ok=True)
-os.makedirs(app.config['ICON_FOLDER'], exist_ok=True)
 
 # Global variable to keep track of the last decompiled directory
-global last_decompiled_dir, apk_icon_path
+global last_decompiled_dir
 last_decompiled_dir = None
-apk_icon_path = None
 
 def decompile_apk(apk_path, output_dir):
     # Remove the existing directory if it exists
@@ -31,14 +26,19 @@ def decompile_apk(apk_path, output_dir):
     print(f"Running command: {cmd}")  # Debug print statement
     subprocess.run(cmd, shell=True, check=True)
 
-def extract_icon(apk_path):
-    # Extract the APK file to get the icon
-    with ZipFile(apk_path, 'r') as apk:
-        for file in apk.namelist():
-            if file.endswith('.png') and 'res/mipmap' in file:
-                apk.extract(file, app.config['ICON_FOLDER'])
-                icon_path = os.path.join(app.config['ICON_FOLDER'], file)
-                return icon_path
+def run_frida_script(package_name, script_path):
+    cmd = f"frida -U -p $(adb shell ps | grep {package_name} | awk '{{print $2}}') -l {script_path}"
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    return result.stdout
+
+def get_package_name(decompiled_dir):
+    manifest_path = os.path.join(decompiled_dir, "AndroidManifest.xml")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+            match = re.search(r'package="([^"]+)"', content)
+            if match:
+                return match.group(1)
     return None
 
 def analyze_apk(decompiled_dir):
@@ -82,6 +82,14 @@ def analyze_apk(decompiled_dir):
                 if permission in content:
                     issues.append(f"Dangerous permission {permission} found in AndroidManifest.xml")
 
+    # Analyze APK with Frida
+    package_name = get_package_name(decompiled_dir)
+    if package_name:
+        frida_script_path = 'frida_scripts/frida_script.js'
+        frida_output = run_frida_script(package_name, frida_script_path)
+        if frida_output:
+            issues.append(f"Frida analysis results:\n{frida_output}")
+    
     if not issues:
         issues.append("No issues found.")
     
@@ -89,7 +97,7 @@ def analyze_apk(decompiled_dir):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    global last_decompiled_dir, apk_icon_path
+    global last_decompiled_dir
     if request.method == 'POST':
         file = request.files['file']
         if file and file.filename.endswith('.apk'):
@@ -101,12 +109,8 @@ def upload_file():
                 output_dir = os.path.join(app.config['DECOMPILED_FOLDER'], os.path.splitext(filename)[0])
                 decompile_apk(apk_path, output_dir)
                 last_decompiled_dir = output_dir
-
-                # Extract the APK icon
-                apk_icon_path = extract_icon(apk_path)
-
                 issues = analyze_apk(output_dir)
-                return render_template('results.html', issues=issues, icon=apk_icon_path, apk_name=filename)
+                return render_template('results.html', issues=issues)
             except subprocess.CalledProcessError as e:
                 print(f"Error during decompilation: {e}")
                 return f"Error during decompilation: {e}", 500
