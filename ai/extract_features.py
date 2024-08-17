@@ -7,15 +7,7 @@ def extract_features(decompiled_dir):
         'smali_files_count': 0,
         'hardcoded_keys_count': 0,
         'obfuscated_code_count': 0,
-        'suspicious_network_count': 0,
-        'permissions_count': 0,
-        'exported_activities_count': 0,
-        'imported_libraries_count': 0,
-        'broadcast_receivers_count': 0,
-        'services_count': 0,
-        'content_providers_count': 0,
-        'network_requests_count': 0,
-        'hardcoded_urls_count': 0
+        'suspicious_network_count': 0
     }
 
     # Count the number of .smali files
@@ -88,15 +80,7 @@ def extract_features(decompiled_dir):
         'smali_files_count',
         'hardcoded_keys_count',
         'obfuscated_code_count',
-        'suspicious_network_count',
-        'permissions_count',
-        'exported_activities_count',
-        'imported_libraries_count',
-        'broadcast_receivers_count',
-        'services_count',
-        'content_providers_count',
-        'network_requests_count',
-        'hardcoded_urls_count'
+        'suspicious_network_count'
     ]
 
     # Construct feature vector
