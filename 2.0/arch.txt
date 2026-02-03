@@ -1,0 +1,25 @@
+apk_security_scanner/
+│
+├── app.py
+├── requirements.txt
+│
+├── analyzer/
+│   ├── __init__.py
+│   ├── permissions.py
+│   ├── manifest.py
+│   ├── secrets.py
+│   └── network.py
+│
+├── uploads/
+│
+├── templates/
+│   ├── index.html
+│   └── report.html
+│
+└── static/
+
+
+
+https://chatgpt.com/share/69835c98-5048-8005-b96f-ed76a0921667
+
+https://chatgpt.com/c/698351f6-116c-8321-998a-a1017d83ca91

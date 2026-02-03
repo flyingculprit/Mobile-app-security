@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Report</title>
+</head>
+<body>
+
+<h2>Security Report</h2>
+<h3>Risk Level: {{ risk }}</h3>
+
+<h4>Dangerous Permissions</h4>
+<ul>
+{% for d in dangerous %}
+<li>{{ d }}</li>
+{% endfor %}
+</ul>
+
+<h4>Exported Components</h4>
+<ul>
+{% for e in exported %}
+<li>{{ e }}</li>
+{% endfor %}
+</ul>
+
+<h4>Hardcoded Secrets</h4>
+<ul>
+{% for s in secrets %}
+<li>{{ s.type }}</li>
+{% endfor %}
+</ul>
+
+<h4>Insecure URLs</h4>
+<ul>
+{% for u in insecure_urls %}
+<li>{{ u }}</li>
+{% endfor %}
+</ul>
+
+</body>
+</html>
