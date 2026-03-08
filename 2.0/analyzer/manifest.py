@@ -4,17 +4,19 @@ from lxml import etree
 
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
+
 def exported_components(apk):
+
     manifest = apk.get_android_manifest_xml()
 
     if manifest is None:
         return {"error": "AndroidManifest.xml not found"}
 
-    # ✅ CASE 1: Already parsed (lxml Element)
+    # Case 1: Already parsed (lxml element)
     if isinstance(manifest, etree._Element):
         root = manifest
 
-    # ✅ CASE 2: Raw binary AXML (bytes)
+    # Case 2: Binary AXML
     elif isinstance(manifest, (bytes, bytearray)):
         axml = AXMLPrinter(manifest)
         xml_bytes = axml.get_xml()
@@ -24,6 +26,7 @@ def exported_components(apk):
         return {"error": f"Unknown manifest type: {type(manifest)}"}
 
     application = root.find("application")
+
     if application is None:
         return {"error": "<application> tag not found"}
 
@@ -42,7 +45,9 @@ def exported_components(apk):
     }
 
     for tag, key in components.items():
+
         for comp in application.findall(tag):
+
             name = comp.get(ANDROID_NS + "name")
             exported_attr = comp.get(ANDROID_NS + "exported")
 

@@ -1,13 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>APK Security Scanner</title>
+
+<meta charset="UTF-8">
+<title>APK Security Scanner</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 </head>
+
 <body>
-    <h2>Upload APK for Security Analysis</h2>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="apk" required>
-        <button type="submit">Scan</button>
-    </form>
+
+<div class="overlay"></div>
+
+<div class="container">
+
+<div class="card">
+
+<h1>APK Security Scanner</h1>
+
+<p class="subtitle">
+Static Android APK security analysis
+</p>
+
+<form method="post" enctype="multipart/form-data">
+
+<label class="upload-box">
+
+<input type="file" name="apk" required>
+
+<div class="upload-content">
+
+<div class="upload-icon">📁</div>
+
+<p>Click to upload APK</p>
+
+<span>Only .apk files supported</span>
+
+</div>
+
+</label>
+
+<button type="submit" class="scan-btn">
+Scan APK
+</button>
+
+</form>
+
+</div>
+
+</div>
+
 </body>
 </html>
