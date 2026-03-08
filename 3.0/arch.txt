@@ -1,0 +1,19 @@
+apk_security_scanner/
+│
+├── app.py
+├── requirements.txt
+│
+├── analyzer/
+│   ├── __init__.py
+│   ├── permissions.py
+│   ├── manifest.py
+│   ├── secrets.py
+│   └── network.py
+│
+├── uploads/
+│
+├── templates/
+│   ├── index.html
+│   └── report.html
+│
+└── static/

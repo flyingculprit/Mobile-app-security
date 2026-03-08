@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<title>APK Security Scanner</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<div class="container">
+
+<div class="card">
+
+<h1>APK Security Scanner</h1>
+
+<p class="subtitle">
+Static Android APK security analysis
+</p>
+
+<form id="scanForm" enctype="multipart/form-data">
+
+<label class="upload-box">
+
+<input type="file" name="apk" id="apkInput" accept=".apk" required>
+
+<div class="upload-content">
+
+<div class="upload-icon">📁</div>
+
+<p id="fileText">Click to upload APK</p>
+
+<span>Only .apk files supported</span>
+
+</div>
+
+</label>
+
+<button type="submit" class="scan-btn">
+Scan APK
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+
+<!-- LOADING SCREEN -->
+
+<div id="loadingScreen">
+
+<div class="loader"></div>
+
+<p>Scanning APK...</p>
+
+<div class="progress-bar">
+<div class="progress" id="progress"></div>
+</div>
+
+<span id="percent">0%</span>
+
+</div>
+
+
+<script>
+
+const form = document.getElementById("scanForm");
+const fileInput = document.getElementById("apkInput");
+const fileText = document.getElementById("fileText");
+
+const loadingScreen = document.getElementById("loadingScreen");
+const progressBar = document.getElementById("progress");
+const percentText = document.getElementById("percent");
+
+let progress = 0;
+let scanFinished = false;
+
+/* SHOW FILE NAME */
+
+fileInput.addEventListener("change", function(){
+
+const file = this.files[0];
+
+if(!file) return;
+
+if(!file.name.endsWith(".apk")){
+alert("Only APK files allowed");
+this.value="";
+return;
+}
+
+fileText.innerText = file.name;
+
+});
+
+
+/* PROGRESS BAR CONTROL */
+
+function startProgress(){
+
+const interval = setInterval(()=>{
+
+if(progress < 80){
+
+progress += 1;
+
+progressBar.style.width = progress + "%";
+percentText.innerText = progress + "%";
+
+}
+
+if(scanFinished){
+
+clearInterval(interval);
+
+finishProgress();
+
+}
+
+},120);
+
+}
+
+
+/* FINISH 80 -> 100 */
+
+function finishProgress(){
+
+const finishInterval = setInterval(()=>{
+
+if(progress < 100){
+
+progress++;
+
+progressBar.style.width = progress + "%";
+percentText.innerText = progress + "%";
+
+}else{
+
+clearInterval(finishInterval);
+
+setTimeout(()=>{
+document.write(serverResponse);
+},400);
+
+}
+
+},20);
+
+}
+
+
+
+let serverResponse = "";
+
+
+/* FORM SUBMIT */
+
+form.addEventListener("submit", function(e){
+
+e.preventDefault();
+
+loadingScreen.style.display = "flex";
+
+startProgress();
+
+const formData = new FormData(form);
+
+fetch("/",{
+method:"POST",
+body:formData
+})
+
+.then(res => res.text())
+.then(html =>{
+
+serverResponse = html;
+
+scanFinished = true;
+
+});
+
+});
+
+</script>
+
+</body>
+</html>
