@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>APK Security Report</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1>🔐 APK Security Report</h1>
+<p>Risk Level: <span class="risk">{{ risk }}</span></p>
+<a href="/" class="back-btn">⬅ Scan Another APK</a>
+</div>
+
+<!-- Security Score -->
+
+<div class="score-box">
+
+<div class="score-title">Security Score</div>
+
+<div class="score-bar">
+<div class="score-fill {{ score_class }}" data-score="{{ score }}"></div>
+</div>
+
+</div>
+
+
+<!-- Dangerous Permissions -->
+
+<div class="card">
+
+<div class="card-title">⚠ Dangerous Permissions</div>
+
+<ul>
+
+{% for d in dangerous %}
+<li>{{ d }}</li>
+
+{% else %}
+<li class="safe">No dangerous permissions detected</li>
+
+{% endfor %}
+
+</ul>
+
+</div>
+
+
+<!-- Exported Components -->
+
+<div class="card">
+
+<div class="card-title">📦 Exported Components</div>
+
+{% if exported.error %}
+
+<p class="error">{{ exported.error }}</p>
+
+{% else %}
+
+<ul>
+
+{% for key, value in exported.items() %}
+
+<li>
+<b>{{ key }}</b>
+
+<ul>
+
+{% for item in value %}
+<li>{{ item }}</li>
+{% endfor %}
+
+</ul>
+
+</li>
+
+{% endfor %}
+
+</ul>
+
+{% endif %}
+
+</div>
+
+
+<!-- Hardcoded Secrets -->
+
+<div class="card">
+
+<div class="card-title">🕵 Hardcoded Secrets</div>
+
+<ul>
+
+{% for s in secrets %}
+<li class="secret">{{ s.type }}</li>
+
+{% else %}
+<li class="safe">No secrets detected</li>
+
+{% endfor %}
+
+</ul>
+
+</div>
+
+
+<!-- API Keys -->
+
+<div class="card">
+
+<div class="card-title">🔑 API Keys Detected</div>
+
+<ul>
+
+{% for key in api_keys %}
+<li class="api">{{ key[0] }} : {{ key[1] }}</li>
+
+{% else %}
+<li class="safe">No API keys found</li>
+
+{% endfor %}
+
+</ul>
+
+</div>
+
+
+<!-- Insecure URLs -->
+
+<div class="card">
+
+<div class="card-title">🌐 Insecure URLs (HTTP)</div>
+
+<ul>
+
+{% for u in insecure_urls %}
+<li class="insecure">{{ u }}</li>
+
+{% else %}
+<li class="safe">No insecure URLs detected</li>
+
+{% endfor %}
+
+</ul>
+
+</div>
+
+</div>
+
+<script>
+const scoreBar = document.querySelector(".score-fill");
+const score = scoreBar.getAttribute("data-score");
+scoreBar.style.width = score + "%";
+</script>
+
+</body>
+</html>

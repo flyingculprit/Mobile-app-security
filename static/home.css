@@ -1,0 +1,218 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background-image:url("https://i.pinimg.com/736x/11/e2/0f/11e20f4494d1ccf9fe69ed766d66c060.jpg");
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+color:white;
+}
+
+/* Dark overlay */
+
+.overlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0, 0, 0, 0.614);
+z-index:0;
+}
+
+/* Container */
+
+.container{
+position:relative;
+z-index:1;
+}
+
+/* Glass Card */
+
+.card{
+width:420px;
+padding:40px;
+border-radius:14px;
+
+background:rgba(20,20,20,0.65);
+
+backdrop-filter:blur(14px);
+
+border:1px solid rgba(255,0,0,0.25);
+
+box-shadow:
+0 10px 40px rgba(0,0,0,0.8),
+0 0 20px rgba(255,0,0,0.2);
+
+text-align:center;
+}
+
+/* Title */
+
+.card h1{
+font-size:30px;
+font-weight:600;
+margin-bottom:8px;
+}
+
+.subtitle{
+font-size:14px;
+color:#b3b3b3;
+margin-bottom:30px;
+}
+
+/* Upload box */
+
+.upload-box{
+display:block;
+border:2px dashed rgba(255,0,0,0.35);
+border-radius:10px;
+padding:35px;
+margin-bottom:25px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.upload-box:hover{
+border-color:#ff2b2b;
+background:rgba(255,0,0,0.05);
+}
+
+.upload-box input{
+display:none;
+}
+
+.upload-icon{
+font-size:38px;
+margin-bottom:10px;
+}
+
+.upload-content p{
+font-size:15px;
+margin-bottom:5px;
+}
+
+.upload-content span{
+font-size:12px;
+color:#888;
+}
+
+/* Scan button */
+
+.scan-btn{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+
+background:#b30000;
+
+color:white;
+font-size:15px;
+font-weight:500;
+
+cursor:pointer;
+transition:0.3s;
+}
+
+.scan-btn:hover{
+background:#ff0000;
+box-shadow:0 0 12px rgba(255,0,0,0.6);
+transform:translateY(-1px);
+}
+
+
+/* LOADING SCREEN */
+
+#loadingScreen{
+
+position:fixed;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+background:rgba(0,0,0,0.95);
+
+display:none;
+
+flex-direction:column;
+
+align-items:center;
+justify-content:center;
+
+z-index:999;
+
+color:white;
+
+}
+
+/* LOADER */
+
+.loader {
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#ff0000 0 90deg,#333 0 180deg);
+  animation: l21 1s infinite linear;
+  margin-bottom:20px;
+}
+
+@keyframes l21 {
+  100% {transform: rotate(.5turn)}
+}
+
+/* SCAN TEXT */
+
+#scanText{
+font-size:16px;
+margin-bottom:20px;
+color:#ccc;
+}
+
+/* PROGRESS BAR */
+
+.progress-bar{
+
+width:250px;
+height:8px;
+
+background:#333;
+
+border-radius:10px;
+
+overflow:hidden;
+
+margin-bottom:10px;
+
+}
+
+.progress{
+
+height:100%;
+
+width:0%;
+
+background:#ff0000;
+
+transition:width 0.2s;
+
+}
+
+#percent{
+
+font-size:14px;
+color:#aaa;
+
+}
