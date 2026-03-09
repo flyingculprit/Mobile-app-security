@@ -47,100 +47,123 @@
 
     <script>
         const form = document.getElementById("scanForm");
-        const fileInput = document.getElementById("apkInput");
-        const fileText = document.getElementById("fileText");
-        const submitBtn = document.getElementById("submitBtn");
-        const uploadStatus = document.getElementById("uploadStatus");
-        const uploadBarFill = document.getElementById("uploadBarFill");
-        const uploadStatusText = document.getElementById("uploadStatusText");
+const fileInput = document.getElementById("apkInput");
+const fileText = document.getElementById("fileText");
+const submitBtn = document.getElementById("submitBtn");
+const uploadStatus = document.getElementById("uploadStatus");
+const uploadBarFill = document.getElementById("uploadBarFill");
+const uploadStatusText = document.getElementById("uploadStatusText");
 
-        const loadingScreen = document.getElementById("loadingScreen");
-        const progressBar = document.getElementById("progress");
-        const percentText = document.getElementById("percent");
+const loadingScreen = document.getElementById("loadingScreen");
+const progressBar = document.getElementById("progress");
+const percentText = document.getElementById("percent");
 
-        let scanProgress = 0;
-        let serverResponse = "";
+let scanProgress = 0;
+let serverResponse = "";
+let animationInterval;
 
-        fileInput.addEventListener("change", function () {
-            const file = this.files[0];
-            if (!file) return;
-            if (!file.name.endsWith(".apk")) {
-                alert("Only APK files allowed");
-                this.value = "";
-                return;
+/* SHOW FILE NAME */
+fileInput.addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) return;
+    if (!file.name.endsWith(".apk")) {
+        alert("Only APK files allowed");
+        this.value = "";
+        return;
+    }
+    fileText.innerText = file.name;
+});
+
+/* SCANNING ANIMATION (0 to 80%) */
+function startScanAnimation() {
+    // Hide upload status and show full-screen scanner
+    uploadStatus.style.display = "none";
+    loadingScreen.style.display = "flex";
+
+    animationInterval = setInterval(() => {
+        if (scanProgress < 80) {
+            scanProgress += 1;
+            progressBar.style.width = scanProgress + "%";
+            percentText.innerText = scanProgress + "%";
+        }
+        
+        // If server responded while we were still climbing to 80,
+        // stop this interval and trigger the finish.
+        if (serverResponse !== "" && scanProgress >= 80) {
+            clearInterval(animationInterval);
+            finishScan();
+        }
+    }, 150); // Speed of the 0-80% crawl
+}
+
+/* FINISH SCAN (80 to 100%) */
+function finishScan() {
+    const finishInterval = setInterval(() => {
+        if (scanProgress < 100) {
+            scanProgress++;
+            progressBar.style.width = scanProgress + "%";
+            percentText.innerText = scanProgress + "%";
+        } else {
+            clearInterval(finishInterval);
+            setTimeout(() => {
+                document.open();
+                document.write(serverResponse);
+                document.close();
+            }, 400);
+        }
+    }, 30);
+}
+
+/* FORM SUBMIT */
+form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    
+    submitBtn.style.display = "none";
+    uploadStatus.style.display = "block";
+
+    const formData = new FormData(form);
+    const xhr = new XMLHttpRequest();
+
+    // 1. TRACK UPLOAD
+    xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            uploadBarFill.style.width = percent + "%";
+            uploadStatusText.innerText = `Uploading: ${percent}%`;
+            
+            // AS SOON AS UPLOAD IS DONE, START THE SCAN ANIMATION
+            if(percent === 100) {
+                uploadStatusText.innerText = "Upload Complete! Initializing Scan...";
+                // Small delay so the user sees "Complete" before the screen switches
+                setTimeout(() => {
+                    if (loadingScreen.style.display !== "flex") {
+                        startScanAnimation();
+                    }
+                }, 800);
             }
-            fileText.innerText = file.name;
-        });
+        }
+    });
 
-        function startScanAnimation() {
-            loadingScreen.style.display = "flex";
-            const interval = setInterval(() => {
-                if (scanProgress < 90) {
-                    scanProgress += 1;
-                    progressBar.style.width = scanProgress + "%";
-                    percentText.innerText = scanProgress + "%";
-                }
-                if (serverResponse !== "" && scanProgress >= 90) {
-                    clearInterval(interval);
+    // 2. TRACK SERVER RESPONSE (The actual scanning)
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                serverResponse = xhr.responseText;
+                // If the animation already reached 80%, trigger finish immediately
+                if (scanProgress >= 80) {
+                    clearInterval(animationInterval);
                     finishScan();
                 }
-            }, 100);
+            } else {
+                alert("Error during scan. Please try again.");
+                location.reload();
+            }
         }
+    };
 
-        function finishScan() {
-            const finishInterval = setInterval(() => {
-                if (scanProgress < 100) {
-                    scanProgress++;
-                    progressBar.style.width = scanProgress + "%";
-                    percentText.innerText = scanProgress + "%";
-                } else {
-                    clearInterval(finishInterval);
-                    setTimeout(() => {
-                        document.open();
-                        document.write(serverResponse);
-                        document.close();
-                    }, 400);
-                }
-            }, 30);
-        }
-
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            
-            submitBtn.style.display = "none";
-            uploadStatus.style.display = "block";
-
-            const formData = new FormData(form);
-            const xhr = new XMLHttpRequest();
-
-            // REAL-TIME UPLOAD TRACKING
-            xhr.upload.addEventListener("progress", (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    uploadBarFill.style.width = percent + "%";
-                    uploadStatusText.innerText = `Uploading: ${percent}%`;
-                    
-                    if(percent === 100) {
-                        uploadStatusText.innerText = "Upload Done! Starting Scan...";
-                    }
-                }
-            });
-
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    serverResponse = xhr.responseText;
-                    
-                    // Delay slightly after 100% so user sees "Done"
-                    setTimeout(() => {
-                        uploadStatus.style.display = "none";
-                        startScanAnimation();
-                    }, 1000);
-                }
-            };
-
-            xhr.open("POST", "/", true);
-            xhr.send(formData);
-        });
+    xhr.open("POST", "/", true);
+    xhr.send(formData);
+});
     </script>
 </body>
 </html>
